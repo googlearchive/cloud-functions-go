@@ -1,0 +1,13 @@
+{
+  "name": "execer",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install": "node-gyp rebuild"
+  },
+  "author": "",
+  "license": "Apache 2.0",
+  "gypfile": true
+}
