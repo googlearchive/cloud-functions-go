@@ -16,24 +16,29 @@
 package nodego
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 )
 
 const HTTPTrigger = "/req"
 
+var fds = flag.String("fds", "", "fd1,fd2,...")
+
 // TakeOver attempts to take over all of node's sockets that were open when it
 // execve'd this binary. This binary must have been started by the execer node
 // module for this to work.
 func TakeOver() {
-	fds := os.Args[1:]
-	if len(fds) == 0 {
-		log.Fatal("No FDs provided.")
+	if len(*fds) == 0 {
+		fmt.Fprintln(os.Stderr, "Required flag fds was not set.")
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
 	}
 
 	ready := func(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +51,7 @@ func TakeOver() {
 	})
 
 	var wg sync.WaitGroup
-	for _, arg := range fds {
+	for _, arg := range strings.Split(*fds, ",") {
 		fd, err := strconv.Atoi(arg)
 		if err != nil {
 			log.Printf("Error converting arg %q to int: %v", arg, err)
