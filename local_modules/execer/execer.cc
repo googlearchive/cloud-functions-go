@@ -15,16 +15,61 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <time.h>
 #include <node.h>
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <v8.h>
 #include <vector>
 
 using namespace v8;
+
+// write_response writes an HTTP 200 response containing "User function is ready" to the specified FD.
+//
+// write_response returns true if the FD was writable.
+bool write_response(int fd) {
+	// This is what Nginx does.
+	char buf[2048];
+	time_t now = time(0);
+	struct tm gm = *gmtime(&now);
+
+	// For more information about the data format, see:
+	// https://tools.ietf.org/html/rfc7231#section-7.1.1.1
+	if (strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S %Z", &gm) <= 0) {
+		fprintf(stderr, "strftime's output didn't fit in %lu bytes\n", sizeof(buf));
+		exit(1);
+	}
+	std::ostringstream response;
+	response << "HTTP/1.0 200 OK\n" <<
+	"Date: " << buf << "\n" <<
+	"Content-Length: 23\n" <<
+	"Content-Type: text/plain; charset=utf-8\n\n" <<
+	"User function is ready\n";
+	std::string res = response.str();
+
+	while (true) {
+		ssize_t result = write(fd, res.c_str(), res.length());
+		if (result == 0) {
+			// Socket is writable, but EOF.
+			return true;
+		}
+		if (result != -1) {
+			fprintf(stderr, "wrote %zd of %lu byte(s) to FD %d, ", result, res.length(), fd);
+			res = res.substr(static_cast<unsigned long>(result));
+			fprintf(stderr, "%lu byte(s) left\n", res.length());
+			if (res.length() == 0) {
+				return true;
+			}
+		} else if (errno != EINTR) {
+			return false;
+		}
+	}
+}
 
 void init(Handle<Object> target) {
 	const char bin[] = "./main";
@@ -55,16 +100,44 @@ void init(Handle<Object> target) {
 
 	for (struct dirent *ent = readdir(dir); ent != NULL; ent = readdir(dir)) {
 		int fd = atoi(ent->d_name);
+
 		struct sockaddr_storage addr;
 		socklen_t addrlen = sizeof(addr);
-		if (getsockname(fd, reinterpret_cast<sockaddr*>(&addr), &addrlen) >= 0) {
-			// Clear CLOEXEC for the socket FD.
-			if (fcntl(fd, F_SETFD, 0) == -1) {
-				fprintf(stderr, "fcntl(%d, F_SETFD, 0) %d\n", fd, errno);
-				exit(1);
-			}
-			fds.push_back(ent->d_name);
+		if (getsockname(fd, reinterpret_cast<sockaddr*>(&addr), &addrlen) == -1) {
+			continue;
 		}
+
+		// Save a copy of the FD flags before changing them.
+		int saved_flags = fcntl(fd, F_GETFL);
+		if (saved_flags == -1) {
+			fprintf(stderr, "fcntl(%d, F_GETFL) %d\n", fd, errno);
+			exit(1);
+		}
+
+		// Clear NONBLOCK. This avoids polling.
+		if (fcntl(fd, F_SETFL, saved_flags & ~O_NONBLOCK) == -1) {
+			fprintf(stderr, "fcntl(%d, F_SETFL, saved_flags & ~O_NONBLOCK) %d\n", fd, errno);
+			exit(1);
+		}
+
+		if (write_response(fd)) {
+			// Socket was writable, so it isn't listening.
+			continue;
+		}
+
+		// Reset NONBLOCK. Servers tend to work better if the FD is non-blocking. Some servers require it.
+		if (fcntl(fd, F_SETFL, saved_flags | O_NONBLOCK) == -1) {
+			fprintf(stderr, "fcntl(%d, F_SETFL, saved_flags | O_NONBLOCK) %d\n", fd, errno);
+			exit(1);
+		}
+
+		// Clear CLOEXEC. We need to preserve listening FDs.
+		if (fcntl(fd, F_SETFD, 0) == -1) {
+			fprintf(stderr, "fcntl(%d, F_SETFD, 0) %d\n", fd, errno);
+			exit(1);
+		}
+
+		fds.push_back(ent->d_name);
 	}
 
 	std::vector<const char*> args;
@@ -74,6 +147,7 @@ void init(Handle<Object> target) {
 	}
 	args.push_back(NULL);
 
+	fprintf(stderr, "execing replacement binary...\n");
 	execv(bin, const_cast<char* const*>(&args[0]));
 
 	fprintf(stderr, "execve %d\n", errno);

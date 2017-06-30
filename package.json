@@ -6,6 +6,6 @@
   "author": "",
   "license": "Apache 2.0",
   "dependencies": {
-    "execer": "0.0.0"
+    "execer": "file:local_modules/execer"
   }
 }

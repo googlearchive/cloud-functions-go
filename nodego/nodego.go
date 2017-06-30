@@ -23,30 +23,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 )
-
-func startServer(l net.Listener, wg *sync.WaitGroup) {
-	wg.Add(1)
-	go func() {
-		log.Println(http.Serve(l, nil))
-		l.Close()
-		wg.Done()
-	}()
-}
-
-const readyMessage = `HTTP/1.0 200 OK
-Date: %s
-Content-Length: 23
-Content-Type: text/plain; charset=utf-8
-
-User function is ready
-`
-
-func sendReady(c net.Conn) error {
-	_, err := c.Write([]byte(fmt.Sprintf(readyMessage, time.Now().UTC().Format(http.TimeFormat))))
-	return err
-}
 
 const HTTPTrigger = "/req"
 
@@ -54,6 +31,11 @@ const HTTPTrigger = "/req"
 // execve'd this binary. This binary must have been started by the execer node
 // module for this to work.
 func TakeOver() {
+	fds := os.Args[1:]
+	if len(fds) == 0 {
+		log.Fatal("No FDs provided.")
+	}
+
 	ready := func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "User function is ready")
 	}
@@ -64,32 +46,27 @@ func TakeOver() {
 	})
 
 	var wg sync.WaitGroup
-	for _, arg := range os.Args[1:] {
+	for _, arg := range fds {
 		fd, err := strconv.Atoi(arg)
 		if err != nil {
 			log.Printf("Error converting arg %q to int: %v", arg, err)
 			continue
 		}
 		f := os.NewFile(uintptr(fd), "")
-		c, err := net.FileConn(f)
-		if err != nil {
-			log.Println("Error creating FileConn:", err)
-			f.Close()
-			continue
-		}
-		err = sendReady(c)
-		c.Close()
-		if err == nil {
-			f.Close()
-			continue
-		}
 		l, err := net.FileListener(f)
 		f.Close()
 		if err != nil {
 			log.Println("Error creating FileListener:", err)
 			continue
 		}
-		startServer(l, &wg)
+
+		log.Println("Resuming HTTP server on", l.Addr())
+		wg.Add(1)
+		go func() {
+			log.Println(http.Serve(l, nil))
+			l.Close()
+			wg.Done()
+		}()
 	}
 
 	wg.Wait()
