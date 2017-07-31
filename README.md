@@ -26,13 +26,13 @@ A demo hello world example is included. To try it out, simply skip to the [Deplo
 For normal development, it should only be necessary to modify the main.go file. Although this file probably shouldn't live in your GOPATH, feel free to import libraries from your GOPATH (including libraries downloaded with go get).
 
 ## Local Testing
-Run ```make test``` to compile your code and start the test server. Open ```http://localhost:8080/req``` in your browser. The page should display ```User function is ready```. Refresh the page to talk to your code.
+Run ```make test``` to compile your code and start the test server. Open ```http://localhost:8080/execute``` in your browser. The page should display ```User function is ready```. Refresh the page to talk to your code.
 
 ## Deployment
 Run ```make``` to compile and package your code. Upload the generated ```function.zip``` file to Google Cloud Functions as an HTTP trigger function.
 
 ## Limitations
-* This has only been tested for HTTP trigger functions. Non-HTTP trigger functions will use a different endpoint (not ```/req```).
+* This has only been tested for HTTP trigger functions. Non-HTTP trigger functions will use a different endpoint (not ```/execute```).
 * Logging is not supported (yet).
 
 ## Troubleshooting
