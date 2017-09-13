@@ -49,6 +49,8 @@ Run ```vagrant up``` to start the envirement. Run ```vagrant ssh``` to connect t
 ## Troubleshooting
 Some versions of Node.js (especially those packaged for Ubuntu) name their main binary ```nodejs``` instead of ```node```. The symptom of this problem is an error about the ```node``` binary not being found in the path even though Node.js is installed. This can be fixed with ```sudo ln -s $(which nodejs) /usr/local/bin/node```.
 
+It may also be helpful to understand the nodejs environment that your Google Cloud Function runs in (e.g. how does regular `console.log` send logs to Stackdriver, whereas `fmt.Println` doesn't?). You can find more details in the [WORKERJS.md](WORKERJS.md) file.
+
 ## License
 Copyright 2017, Google, Inc.
 
