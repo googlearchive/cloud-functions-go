@@ -19,7 +19,7 @@ all: gcfgo gcfjs
 	zip -FS -r $(OUT) $(GOBIN) node_modules index.js package.json -x *build*
 
 gcfgo: FORCE
-	GOARCH="amd64" GOOS="linux" go build -tags netgo -tags node $(GOBIN).go
+	GOARCH="amd64" GOOS="linux" CGO_ENABLED=0 go build -tags node $(GOBIN).go
 
 gcfjs: FORCE
 	npm install --ignore-scripts --save local_modules/execer
