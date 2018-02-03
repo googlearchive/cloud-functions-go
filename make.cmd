@@ -42,7 +42,8 @@ exit /b 2
     setlocal
     set GOARCH=amd64
     set GOOS=linux
-    go build -tags netgo -tags node %GOBIN%.go
+    set CGO_ENABLED=0
+    go build -tags node %GOBIN%.go
     endlocal
 
     goto :EOF
