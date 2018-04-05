@@ -4,8 +4,12 @@
   "description": "",
   "main": "index.js",
   "author": "",
-  "license": "Apache 2.0",
+  "license": "Apache-2.0",
   "dependencies": {
     "execer": "file:local_modules/execer"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/GoogleCloudPlatform/cloud-functions-go.git"
   }
 }
