@@ -29,3 +29,5 @@ tar -xvzf godeb-amd64.tar.gz
 ./godeb install
 cd
 rm -rf /tmp/go
+
+go get -d -u google.golang.org/api/pubsub/v1 google.golang.org/api/storage/v1

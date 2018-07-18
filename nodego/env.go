@@ -23,7 +23,7 @@ import (
 // Variables copied from worker.js.
 var (
 	codeLocationDir        = os.Getenv("CODE_LOCATION")
-	packageJsonFile        = codeLocationDir + "/package.json"
+	packageJSONFile        = codeLocationDir + "/package.json"
 	entryPoint             = os.Getenv("ENTRY_POINT")
 	supervisorHostname     = os.Getenv("SUPERVISOR_HOSTNAME")
 	supervisorInternalPort = os.Getenv("SUPERVISOR_INTERNAL_PORT")
@@ -55,4 +55,20 @@ func max(a, b int64) int64 {
 	return b
 }
 
+// HTTPTrigger is the pattern to pass to http.Handle or http.HandleFunc to
+// handle HTTP requests.
 const HTTPTrigger = executePrefix
+
+// PubSubTrigger is the pattern to pass to http.Handle or http.HandleFunc to
+// handle Cloud Pub/Sub messages.
+//
+// Currently, pub sub trigger request paths are of the form:
+// /execute/_ah/push-handlers/pubsub/projects/{PROJECT}/topics/{TOPIC}
+const PubSubTrigger = "/"
+
+// BucketTrigger is the pattern to pass to http.Handle or http.HandleFunc to
+// handle Cloud Storage bucket events.
+//
+// Currently, storage bucket trigger request paths are of the form:
+// /execute/_ah/push-handlers/pubsub/projects/{ARBITRARY_VALUE}/topics/{ARBITRARY_VALUE}
+const BucketTrigger = "/"

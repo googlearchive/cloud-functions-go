@@ -43,6 +43,12 @@ Use the Cygwin Terminal to run the commands as described below. Note that `make 
 
 The commands described below may be run as-is using Command Prompt, or prefixed with `./` using Windows PowerShell (i.e. `./make` or `./make godev`). Note that `make test` won't work under Windows.
 
+### External Dependencies
+
+The `events` sub-package depends on the following libraries:
+* `google.golang.org/api/pubsub/v1`
+* `google.golang.org/api/storage/v1`
+
 ## Hello, world!
 A demo hello world example is included. To try it out, simply skip to the [Deployment](#deployment) section.
 
@@ -83,9 +89,6 @@ Run ```make``` to compile and package your code. Upload the generated ```functio
 
 ### Vagrant
 Run ```vagrant up``` to start the envirement. Run ```vagrant ssh``` to connect to the envirement. Run ```cd /vagrant``` to access the respority files. The instructions in [Local Testing](#local-testing) and [Deployment](#deployment) should now work.
-
-## Limitations
-* This has only been tested for HTTP trigger functions. Non-HTTP trigger functions will use a different endpoint (not ```/execute```).
 
 ## Troubleshooting
 Some versions of Node.js (especially those packaged for Ubuntu) name their main binary ```nodejs``` instead of ```node```. The symptom of this problem is an error about the ```node``` binary not being found in the path even though Node.js is installed. This can be fixed with ```sudo ln -s $(which nodejs) /usr/local/bin/node```. There's also a package called `nodejs-legacy` that can be installed in some Debian and Ubuntu distros using `apt` that creates a symlink `node` in `/usr/bin/`
